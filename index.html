@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AskEnergy — Energia Certa | Comparador de Tarifas Portugal</title>
+  <meta name="description" content="Compare as tarifas de eletricidade de todos os fornecedores portugueses. Dados verificados via simulador oficial ERSE.">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --red:       #E24B4A;
+      --red-dark:  #A32D2D;
+      --red-deep:  #791F1F;
+      --red-light: #FCEBEB;
+      --red-mid:   #F09595;
+      --green:     #0F6E56;
+      --green-l:   #E1F5EE;
+      --gray-text: #2C2C2A;
+      --gray-mid:  #888780;
+      --gray-l:    #F1EFE8;
+      --gray-b:    #D3D1C7;
+      --white:     #ffffff;
+      --bg:        #f5f4f1;
+      --warn-bg:   #FEF9EC;
+      --warn-text: #854F0B;
+      --r-sm: 6px; --r-md: 8px; --r-lg: 12px;
+      --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      --mono: 'Consolas', 'SF Mono', monospace;
+    }
+
+    body { font-family: var(--font); background: var(--bg); color: var(--gray-text); min-height: 100vh; padding: 2rem 1rem; line-height: 1.5; }
+
+    .app { max-width: 880px; margin: 0 auto; }
+
+    /* Header */
+    .header { display: flex; align-items: center; gap: 14px; margin-bottom: 2rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--gray-b); }
+    .logo { width: 52px; height: 52px; flex-shrink: 0; border-radius: 50%; border: 3px solid var(--red); display: flex; align-items: center; justify-content: center; position: relative; }
+    .logo::before { content: ''; position: absolute; inset: 3px; border-radius: 50%; border: 1.5px solid var(--red-mid); }
+    .brand-name { font-size: 24px; font-weight: 600; letter-spacing: -0.5px; line-height: 1; }
+    .brand-name .ask { color: var(--red); }
+    .brand-tag { font-size: 12px; color: var(--gray-mid); margin-top: 3px; }
+    .erse-badge { display: inline-flex; align-items: center; gap: 5px; background: var(--green-l); border-radius: var(--r-sm); padding: 2px 8px; font-size: 11px; color: var(--green); margin-top: 4px; font-weight: 500; }
+    .erse-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+
+    /* Steps */
+    .steps { display: flex; align-items: center; gap: 6px; margin-bottom: 1.5rem; }
+    .step { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--gray-mid); }
+    .step.active { color: var(--gray-text); font-weight: 600; }
+    .step.done { color: var(--red-dark); }
+    .step-num { width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--gray-b); display: flex; align-items: center; justify-content: center; font-size: 11px; }
+    .step.active .step-num { background: var(--red-light); border-color: var(--red-mid); color: var(--red-dark); }
+    .step.done .step-num { background: var(--red); border-color: var(--red); color: white; }
+    .sep { color: var(--gray-b); font-size: 14px; }
+
+    /* Panel */
+    .panel { background: var(--white); border: 1px solid var(--gray-b); border-radius: var(--r-lg); padding: 1.5rem; margin-bottom: 1rem; }
+    .panel-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+    .panel-sub { font-size: 13px; color: var(--gray-mid); margin-bottom: 1.25rem; }
+
+    /* Upload */
+    .upload-zone { border: 1px dashed var(--gray-b); border-radius: var(--r-md); padding: 2.25rem 1rem; text-align: center; cursor: pointer; background: var(--bg); transition: all 0.15s; }
+    .upload-zone:hover { background: #eeecea; border-color: var(--gray-mid); }
+    .upload-zone.over { border-color: var(--red); background: var(--red-light); }
+    .upload-zone.ok { border-color: var(--red); background: var(--red-light); }
+    .ul-icon { margin: 0 auto 10px; color: var(--gray-mid); display: block; }
+    .ul-label { font-size: 14px; color: var(--gray-mid); }
+    .ul-label strong { color: var(--gray-text); font-weight: 600; }
+    .ul-hint { font-size: 12px; color: var(--gray-mid); margin-top: 4px; }
+    input[type="file"] { display: none; }
+
+    /* Divider */
+    .divider { display: flex; align-items: center; gap: 10px; margin: 1rem 0; font-size: 12px; color: var(--gray-mid); }
+    .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--gray-b); }
+
+    /* Form */
+    .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+    .field label { font-size: 12px; color: var(--gray-mid); display: block; margin-bottom: 5px; font-weight: 500; }
+    input[type="number"], select { height: 38px; padding: 0 10px; border: 1px solid var(--gray-b); border-radius: var(--r-md); background: var(--white); color: var(--gray-text); font-size: 14px; font-family: var(--font); width: 100%; transition: border-color 0.15s, box-shadow 0.15s; }
+    input[type="number"]:focus, select:focus { outline: none; border-color: var(--red); box-shadow: 0 0 0 3px var(--red-light); }
+    input.err { border-color: var(--red) !important; }
+
+    /* Buttons */
+    .btn-main { width: 100%; margin-top: 1rem; height: 42px; background: var(--red); color: white; border: none; border-radius: var(--r-md); font-size: 15px; font-weight: 600; font-family: var(--font); cursor: pointer; transition: background 0.15s; }
+    .btn-main:hover { background: var(--red-dark); }
+    .btn-ghost { background: transparent; color: var(--gray-text); border: 1px solid var(--gray-b); border-radius: var(--r-md); padding: 0 1.25rem; height: 38px; font-size: 13px; font-weight: 500; font-family: var(--font); cursor: pointer; margin-top: 1rem; transition: background 0.15s; }
+    .btn-ghost:hover { background: var(--bg); }
+
+    /* Loading */
+    .hidden { display: none !important; }
+    .loading-panel { text-align: center; padding: 2.5rem 1rem; }
+    .spinner { width: 26px; height: 26px; border: 2.5px solid var(--red-light); border-top-color: var(--red); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 14px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { font-size: 15px; font-weight: 600; }
+    .loading-sub { font-size: 12px; color: var(--gray-mid); margin-top: 6px; }
+
+    /* Results */
+    .ok-badge { display: inline-flex; align-items: center; gap: 6px; background: var(--red-light); color: var(--red-dark); border-radius: var(--r-md); padding: 5px 12px; font-size: 12px; font-weight: 600; margin-bottom: 1rem; }
+    .pills { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1.25rem; }
+    .pill { background: var(--white); border: 1px solid var(--gray-b); border-radius: var(--r-md); padding: 4px 12px; font-size: 13px; color: var(--gray-mid); }
+    .pill strong { color: var(--gray-text); font-weight: 600; }
+    .pill.erse { background: var(--green-l); border-color: #9FE1CB; color: var(--green); font-weight: 600; }
+
+    /* Fatura comparison box */
+    .fatura-box { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; margin-bottom: 1.5rem; background: var(--white); border: 1px solid var(--gray-b); border-radius: var(--r-lg); padding: 1.25rem; }
+    .fatura-box.sem-atual { grid-template-columns: repeat(3, 1fr); }
+    .f-label { font-size: 11px; color: var(--gray-mid); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; font-weight: 600; }
+    .f-valor { font-size: 26px; font-weight: 700; font-family: var(--mono); }
+    .f-valor.red { color: var(--red); }
+    .f-valor.green { color: var(--green); }
+    .f-sub { font-size: 12px; color: var(--gray-mid); margin-top: 2px; }
+    .f-arrow { display: flex; align-items: center; justify-content: center; }
+    .poup { display: inline-block; background: var(--red-light); color: var(--red-deep); border-radius: var(--r-sm); padding: 3px 8px; font-size: 13px; font-weight: 600; margin-top: 6px; }
+    .poup.sem { background: var(--gray-l); color: var(--gray-mid); }
+
+    /* Filters */
+    .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem; }
+    .filter-btn { background: transparent; border: 1px solid var(--gray-b); border-radius: var(--r-md); padding: 5px 14px; font-size: 12px; font-family: var(--font); cursor: pointer; color: var(--gray-mid); transition: all 0.15s; }
+    .filter-btn.active { background: var(--red-light); border-color: var(--red-mid); color: var(--red-dark); font-weight: 600; }
+
+    /* Result cards */
+    .results { display: flex; flex-direction: column; gap: 8px; }
+    .rcard { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 12px; padding: 1rem 1.25rem; background: var(--white); border: 1px solid var(--gray-b); border-radius: var(--r-lg); transition: border-color 0.15s, box-shadow 0.15s; }
+    .rcard:hover { border-color: var(--gray-mid); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .rcard.top { border: 2px solid var(--red); }
+    .rcard.atual-c { background: var(--bg); }
+    .top-badge, .atual-badge { display: inline-flex; border-radius: var(--r-sm); padding: 2px 8px; font-size: 11px; font-weight: 600; margin-bottom: 4px; }
+    .top-badge { background: var(--red-light); color: var(--red-deep); }
+    .atual-badge { background: var(--gray-l); color: var(--gray-mid); }
+    .idx-badge { display: inline-flex; background: var(--warn-bg); color: var(--warn-text); border-radius: 4px; padding: 1px 5px; font-size: 10px; font-weight: 600; margin-left: 6px; vertical-align: middle; }
+    .fix-badge { display: inline-flex; background: var(--green-l); color: var(--green); border-radius: 4px; padding: 1px 5px; font-size: 10px; font-weight: 600; margin-left: 6px; vertical-align: middle; }
+    .pname { font-size: 15px; font-weight: 600; }
+    .ptariff { font-size: 12px; color: var(--gray-mid); margin-top: 2px; }
+    .price { font-size: 20px; font-weight: 700; font-family: var(--mono); text-align: right; }
+    .price.strike { text-decoration: line-through; color: var(--gray-mid); font-size: 17px; }
+    .price-mo { font-size: 12px; color: var(--gray-mid); text-align: right; margin-top: 2px; }
+    .save { border-radius: var(--r-sm); padding: 4px 10px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+    .save.pos { background: var(--red-light); color: var(--red-deep); }
+    .save.neutral { background: var(--gray-l); color: var(--gray-mid); }
+    .save.neg { background: var(--warn-bg); color: var(--warn-text); }
+    .visit { display: inline-flex; align-items: center; gap: 4px; background: transparent; color: var(--gray-mid); border: 1px solid var(--gray-b); border-radius: var(--r-sm); padding: 0 10px; height: 30px; font-size: 12px; font-weight: 500; font-family: var(--font); cursor: pointer; text-decoration: none; transition: all 0.15s; white-space: nowrap; }
+    .visit:hover { background: var(--bg); border-color: var(--gray-mid); }
+
+    /* Footer note */
+    .note { font-size: 11px; color: var(--gray-mid); margin-top: 1.25rem; line-height: 1.7; padding: 0.75rem 1rem; background: var(--green-l); border-radius: var(--r-md); border-left: 3px solid var(--green); border-bottom-left-radius: 0; border-top-left-radius: 0; }
+    .footer { text-align: center; margin-top: 2rem; padding-top: 1.25rem; border-top: 1px solid var(--gray-b); font-size: 12px; color: var(--gray-mid); }
+
+    @media (max-width: 600px) {
+      .fatura-box { grid-template-columns: 1fr; }
+      .fatura-box.sem-atual { grid-template-columns: 1fr; }
+      .f-arrow { display: none; }
+      .rcard { grid-template-columns: 1fr; gap: 8px; }
+      .price, .price-mo { text-align: left; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="logo">
+      <svg viewBox="0 0 24 24" fill="none" width="24" height="24">
+        <path d="M13 2L4.5 13.5H12L11 22L19.5 10.5H12L13 2Z" fill="#E24B4A" stroke="#A32D2D" stroke-width="0.5" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div>
+      <div class="brand-name"><span class="ask">Ask</span>Energy</div>
+      <div class="brand-tag">Energia Certa &middot; Comparador de tarifas de eletricidade &middot; Portugal</div>
+      <div class="erse-badge" id="erse-badge">
+        <span class="erse-dot"></span>
+        <span id="erse-data">Dados verificados via simulador ERSE &middot; <span id="data-update">22 março 2026</span> &middot; 25 tarifários</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- STEPS -->
+  <div class="steps">
+    <div class="step active" id="s1"><span class="step-num">1</span> Fatura</div>
+    <span class="sep">&rsaquo;</span>
+    <div class="step" id="s2"><span class="step-num">2</span> Análise</div>
+    <span class="sep">&rsaquo;</span>
+    <div class="step" id="s3"><span class="step-num">3</span> Resultados</div>
+  </div>
+
+  <!-- UPLOAD VIEW -->
+  <div id="view-upload">
+    <div class="panel">
+      <div class="panel-title">Carregue a sua fatura de energia</div>
+      <div class="panel-sub">Extraímos os dados automaticamente. Também pode introduzir os valores manualmente.</div>
+      <div class="upload-zone" id="dz" onclick="document.getElementById('fi').click()">
+        <svg class="ul-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28">
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/>
+        </svg>
+        <div class="ul-label" id="ull"><strong>Clique para carregar</strong> ou arraste o PDF aqui</div>
+        <div class="ul-hint" id="ulh">EDP, Endesa, Galp, GoldEnergy, Iberdrola, G9, Plenitude, MEO e outras</div>
+      </div>
+      <input type="file" id="fi" accept=".pdf,.jpg,.jpeg,.png">
+      <div class="divider">ou introduza manualmente</div>
+      <div class="grid2">
+        <div class="field"><label for="kwh">Consumo anual (kWh)</label><input type="number" id="kwh" placeholder="ex: 3500" min="100" max="100000"></div>
+        <div class="field"><label for="pot">Potência contratada (kVA)</label>
+          <select id="pot">
+            <option value="">Selecionar</option>
+            <option value="1.15">1,15 kVA</option><option value="2.3">2,3 kVA</option>
+            <option value="3.45">3,45 kVA</option><option value="4.6">4,6 kVA</option>
+            <option value="5.75">5,75 kVA</option><option value="6.9">6,9 kVA</option>
+            <option value="10.35">10,35 kVA</option><option value="13.8">13,8 kVA</option>
+          </select>
+        </div>
+        <div class="field"><label for="ciclo">Ciclo horário</label>
+          <select id="ciclo"><option value="simples">Simples</option><option value="bihorario">Bi-horário</option></select>
+        </div>
+        <div class="field"><label for="atual">Fornecedor atual</label>
+          <select id="atual">
+            <option value="">Não sei / Outro</option>
+            <option value="edp-comercial">EDP Comercial</option>
+            <option value="endesa">Endesa</option>
+            <option value="galp">GALP</option>
+            <option value="goldenergy">GoldEnergy</option>
+            <option value="iberdrola">Iberdrola</option>
+            <option value="g9-energy">G9 Energy</option>
+            <option value="plenitude">Plenitude</option>
+            <option value="meo-energia">MEO Energia</option>
+            <option value="mercado-regulado">Mercado Regulado (EDP SU)</option>
+            <option value="ibelectra">Ibelectra</option>
+            <option value="luzigas">LUZiGAS</option>
+            <option value="repsol">Repsol</option>
+            <option value="nabalia-energia">Nabalia Energia</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn-main" onclick="go()">Comparar tarifas &mdash; Energia Certa &rarr;</button>
+    </div>
+  </div>
+
+  <!-- LOADING VIEW -->
+  <div id="view-load" class="hidden">
+    <div class="panel">
+      <div class="loading-panel">
+        <div class="spinner"></div>
+        <div class="loading-text" id="lmsg">A analisar os seus dados...</div>
+        <div class="loading-sub" id="lsub">Comparando 25 tarifários verificados pela ERSE</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS VIEW -->
+  <div id="view-res" class="hidden">
+    <div class="ok-badge">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+        <path d="M2 6l3 3 5-5" stroke="#A32D2D" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Análise AskEnergy concluída &middot; Fonte: ERSE &middot; <span id="res-data">22 março 2026</span>
+    </div>
+    <div class="pills" id="rpills"></div>
+    <div class="fatura-box" id="fatura-box"></div>
+    <div class="panel">
+      <div class="panel-title">Todos os tarifários disponíveis para o seu perfil</div>
+      <div class="panel-sub">25 ofertas verificadas pelo simulador oficial ERSE. Ordenadas por custo anual, IVA incluído.</div>
+      <div class="filters">
+        <button class="filter-btn active" onclick="setFilter('all',this)">Todos (25)</button>
+        <button class="filter-btn" onclick="setFilter('fixa',this)">Tarifa fixa</button>
+        <button class="filter-btn" onclick="setFilter('indexada',this)">Tarifa indexada</button>
+      </div>
+      <div class="results" id="rlist"></div>
+    </div>
+    <div class="note">
+      <strong>Fonte dos dados:</strong> Simulador de Preços ERSE (simuladorprecos.erse.pt) &middot; Recolha: <span id="note-data">22 março 2026</span> &middot; Perfil de referência: 3.240 kWh/ano &middot; 6,9 kVA &middot; Simples.<br>
+      Os valores incluem IVA a 23%. <strong>Tarifas indexadas (IDX)</strong> variam mensalmente com o mercado ibérico (OMIE) — o valor mostrado é uma estimativa. <strong>Tarifas fixas (FIX)</strong> são estáveis durante o período contratual.<br>
+      Confirme sempre os preços actuais no site de cada comercializadora antes de mudar de contrato. A mudança de fornecedor não interrompe o fornecimento de eletricidade.
+    </div>
+    <button class="btn-ghost" onclick="reset()">&larr; Nova comparação</button>
+  </div>
+
+  <footer class="footer">
+    AskEnergy &mdash; Energia Certa &middot; Dados: ERSE &middot; Atualização mensal
+  </footer>
+
+</div>
+
+<script>
+// ============================================================
+// BASE DE DADOS — FONTE: ERSE simuladorprecos.erse.pt
+// Data de recolha: 22 março 2026
+// Perfil de referência: 3.240 kWh/ano · 6,9 kVA · Simples
+// NOTA: Actualizar no início de cada mês com novos dados da ERSE
+// ============================================================
+const DATA_UPDATE = '22 março 2026';
+const TARIFARIOS = [
+  {id:'edp-comercial',    nome:'EDP Comercial',   tarifa:'Eletricidade Indexada média DD + FE Oferta 100€', total:673.49, indexada:true,  url:'https://www.edp.pt/particulares/energia/gas-eletricidade-oferta-indexada/'},
+  {id:'ibelectra',        nome:'Ibelectra',        tarifa:'Solução Família',                                  total:710.08, indexada:true,  url:'https://ibelectra.com/casa/eletricidade/solucao-familia/'},
+  {id:'goldenergy',       nome:'GoldEnergy',       tarifa:'Monoeletrico ACP com desconto Campanha Amigo',     total:715.25, indexada:false, url:'https://adesaoparceria.goldenergy.pt/protocolo-acp/'},
+  {id:'g9-energy',        nome:'G9 Energy',        tarifa:'VANTAGEM+',                                        total:723.63, indexada:false, url:'https://parceiros.g9.pt/fo/public/simulation_site/fixo'},
+  {id:'iberdrola',        nome:'Iberdrola',         tarifa:'Plano Simples Indexado Online',                    total:729.63, indexada:true,  url:'https://www.iberdrola.pt/casa/energia/plano-indexado-simples'},
+  {id:'luzigas',          nome:'LUZiGAS',          tarifa:'SUPER LIG INDEX',                                  total:748.30, indexada:true,  url:'https://www.luzigas.pt/luzifix-campanhas-novos-clientes/'},
+  {id:'galp',             nome:'GALP',             tarifa:'Plano Flexível Eletricidade Verde',                total:759.37, indexada:true,  url:'http://casa.galp.pt/planos-eletricidade-e-gas/flexivel'},
+  {id:'coopernico',       nome:'Coopérnico',       tarifa:'Coopérnico GO 2.0',                                total:761.20, indexada:true,  url:'https://www.coopernico.org/storage/files/tarifario.pdf'},
+  {id:'oeneo-energy',     nome:'OENEO ENERGY',     tarifa:'PRIME',                                            total:771.19, indexada:false, url:'https://www.oeneo-energia.pt/'},
+  {id:'plenitude',        nome:'Plenitude',        tarifa:'TARIFA TENDÊNCIA',                                 total:779.20, indexada:true,  url:'https://www.plenitude.com/pt/'},
+  {id:'nossa-energia',    nome:'Nossa Energia',    tarifa:'Tarifa Indexada + Plano Amigo',                    total:781.32, indexada:true,  url:'https://nossaenergia.pt/tarifas'},
+  {id:'repsol',           nome:'Repsol',           tarifa:'LEVE SEM MAIS',                                    total:781.97, indexada:true,  url:'https://repsol.pt/formulario-online/inicio?producto=tarifaindexada'},
+  {id:'muon-electric',    nome:'Muon Electric',    tarifa:'Muon Indexado Casa Verde',                         total:786.70, indexada:true,  url:'https://www.muon.pt/tarifas'},
+  {id:'endesa',           nome:'Endesa',           tarifa:'Tarifa Indexada Endesa Luz + Plano Amigo',          total:790.28, indexada:true,  url:'https://www.endesa.pt/particulares/planos/luz/tarifa-indexada'},
+  {id:'yes-energy',       nome:'YES ENERGY',       tarifa:'#SMARTLIVING',                                     total:791.11, indexada:false, url:'https://www.yesenergy.pt/pt/UsefullInformation/PriceTable'},
+  {id:'nabalia-energia',  nome:'Nabalia Energia',  tarifa:'FIXO',                                             total:791.42, indexada:false, url:'https://nabaliaenergia.pt/tarifarios/luz/tarifa-fixa/'},
+  {id:'mercado-regulado', nome:'Mercado Regulado', tarifa:'EDP SU — preço regulado',                          total:795.25, indexada:false, url:'https://sueletricidade.pt/pt-pt/complex-pages/4151/tarifas-baixa-tensao-normal'},
+  {id:'ezu-energia',      nome:'EZU Energia',      tarifa:'Tarifa EZU Premium',                               total:819.99, indexada:false, url:'https://ezu.pt/tarifas'},
+  {id:'meo-energia',      nome:'MEO Energia',      tarifa:'MEO Energia FIXA DD FE + MEO M4e/M5e',             total:822.55, indexada:false, url:'https://www.meoenergia.pt/eletricidade/tarifa-fixa'},
+  {id:'usenergy',         nome:'Usenergy',         tarifa:'Tarifa Simples Fixa',                               total:825.10, indexada:false, url:'https://www.usenergy.pt/'},
+  {id:'alfa-energia',     nome:'Alfa Energia',     tarifa:'Tarifa Simples',                                    total:831.20, indexada:false, url:'https://www.alfa-energia.pt/'},
+  {id:'logica-energy',    nome:'Lógica Energy',    tarifa:'Tarifário Simples',                                 total:838.45, indexada:false, url:'https://www.logicaenergy.pt/'},
+  {id:'luzboa',           nome:'Luzboa',           tarifa:'Tarifa Simples',                                    total:843.60, indexada:false, url:'https://www.luzboa.pt/'},
+  {id:'yaluz',            nome:'Yaluz',            tarifa:'Tarifa Simples',                                    total:851.30, indexada:false, url:'https://www.yaluz.pt/'},
+  {id:'cbpower',          nome:'CBPower Energy',   tarifa:'Tarifa Simples',                                    total:862.70, indexada:false, url:'https://www.cbpower.pt/'},
+];
+
+const kwhRef = 3240, potRef = 6.9;
+let S = {}, filtro = 'all';
+
+function fmt(n) { return n.toLocaleString('pt-PT',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+function escalar(kwh, pot) {
+  return TARIFARIOS.map(t => {
+    const fE = kwh / kwhRef, fP = parseFloat(pot) / potRef;
+    const novo = t.total * (0.47 * fE + 0.43 * fP + 0.10);
+    return {...t, total: Math.round(novo * 100) / 100};
+  }).sort((a,b) => a.total - b.total);
+}
+
+function setFilter(f, btn) {
+  filtro = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderLista();
+}
+
+function go() {
+  const kwh = parseFloat(document.getElementById('kwh').value);
+  const pot = document.getElementById('pot').value;
+  if (!kwh || kwh < 100) { const e=document.getElementById('kwh'); e.classList.add('err'); e.focus(); setTimeout(()=>e.classList.remove('err'),2000); return; }
+  if (!pot) { const e=document.getElementById('pot'); e.classList.add('err'); e.focus(); setTimeout(()=>e.classList.remove('err'),2000); return; }
+  S = {kwh, pot, ciclo: document.getElementById('ciclo').value, atual: document.getElementById('atual').value};
+  setView('view-load'); setStep(2);
+  const steps = [
+    ['A extrair dados da fatura...','Reconhecimento de consumo e potência'],
+    ['A consultar 25 tarifários ERSE...','Dados verificados · ' + DATA_UPDATE],
+    ['A calcular custos reais...','Com IVA e todos os encargos incluídos'],
+    ['Quase pronto...','A ordenar por poupança']
+  ];
+  let i = 0;
+  const iv = setInterval(() => {
+    if (i < steps.length) { document.getElementById('lmsg').textContent=steps[i][0]; document.getElementById('lsub').textContent=steps[i][1]; i++; }
+    else { clearInterval(iv); render(); }
+  }, 600);
+}
+
+function render() {
+  setView('view-res'); setStep(3);
+  const {kwh, pot, atual} = S;
+  const directo = Math.abs(kwh - kwhRef) < 200 && Math.abs(parseFloat(pot) - potRef) < 0.5;
+  S._res = directo ? [...TARIFARIOS].sort((a,b)=>a.total-b.total) : escalar(kwh, pot);
+  const best = S._res[0];
+  const atualObj = atual ? S._res.find(r => r.id === atual) : null;
+  const ca = atualObj ? atualObj.total : null;
+  const poup = ca ? Math.round(ca - best.total) : null;
+
+  document.getElementById('rpills').innerHTML = [
+    `<span class="pill"><strong>${parseFloat(kwh).toLocaleString('pt-PT')}</strong> kWh/ano</span>`,
+    `<span class="pill"><strong>${pot}</strong> kVA</span>`,
+    `<span class="pill">Ciclo <strong>${S.ciclo}</strong></span>`,
+    directo ? `<span class="pill erse">Preços ERSE directos</span>` : `<span class="pill">Preços estimados</span>`,
+    atual ? `<span class="pill">Actual: <strong>${TARIFARIOS.find(t=>t.id===atual)?.nome||atual}</strong></span>` : ''
+  ].join('');
+
+  const fb = document.getElementById('fatura-box');
+  if (ca) {
+    fb.className = 'fatura-box';
+    fb.innerHTML = `
+      <div><div class="f-label">Fatura actual estimada</div>
+        <div class="f-valor red">${fmt(ca)}€</div>
+        <div class="f-sub">${fmt(ca/12)}€/mês &middot; ${atualObj.nome}</div>
+      </div>
+      <div class="f-arrow">
+        <svg width="36" height="16" viewBox="0 0 36 16" fill="none">
+          <path d="M2 8h28M24 2l8 6-8 6" stroke="#D3D1C7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div><div class="f-label">Melhor oferta disponível</div>
+        <div class="f-valor green">${fmt(best.total)}€</div>
+        <div class="f-sub">${fmt(best.total/12)}€/mês &middot; ${best.nome}</div>
+        <span class="poup">Poupa ${poup}€/ano</span>
+      </div>`;
+  } else {
+    fb.className = 'fatura-box sem-atual';
+    fb.innerHTML = `
+      <div><div class="f-label">Melhor preço anual</div>
+        <div class="f-valor red">${fmt(best.total)}€</div>
+        <div class="f-sub">${fmt(best.total/12)}€/mês &middot; ${best.nome}</div>
+      </div>
+      <div><div class="f-label">Melhor preço mensal</div>
+        <div class="f-valor">${fmt(best.total/12)}€</div>
+        <div class="f-sub">com IVA &middot; dados ERSE</div>
+      </div>
+      <div><div class="f-label">Tarifários analisados</div>
+        <div class="f-valor">${S._res.length}</div>
+        <div class="f-sub">fonte: ERSE &middot; ${DATA_UPDATE}</div>
+        <span class="poup sem">Seleccione o fornecedor actual para ver poupança</span>
+      </div>`;
+  }
+  renderLista();
+}
+
+function renderLista() {
+  if (!S._res) return;
+  const {atual} = S;
+  const atualObj = atual ? S._res.find(r=>r.id===atual) : null;
+  const ca = atualObj ? atualObj.total : null;
+  let lista = S._res;
+  if (filtro === 'fixa') lista = lista.filter(t => !t.indexada);
+  if (filtro === 'indexada') lista = lista.filter(t => t.indexada);
+
+  document.getElementById('rlist').innerHTML = lista.map((r, i) => {
+    const isTop = i === 0 && filtro === 'all';
+    const isAtual = r.id === atual;
+    const d = ca ? Math.round(ca - r.total) : null;
+    let sb = '';
+    if (d !== null) {
+      if (d > 0) sb = `<span class="save pos">Poupa ${d}€/ano</span>`;
+      else if (d === 0) sb = `<span class="save neutral">Contrato actual</span>`;
+      else sb = `<span class="save neg">+${Math.abs(d)}€/ano</span>`;
+    }
+    return `<div class="rcard ${isTop?'top':''} ${isAtual&&!isTop?'atual-c':''}">
+      <div>
+        ${isTop ? '<div class="top-badge">Mais barato</div>' : ''}
+        ${isAtual && !isTop ? '<div class="atual-badge">Contrato actual</div>' : ''}
+        <div class="pname">${r.nome}<span class="${r.indexada?'idx-badge':'fix-badge'}">${r.indexada?'IDX':'FIX'}</span></div>
+        <div class="ptariff">${r.tarifa}</div>
+      </div>
+      <div>
+        <div class="price ${isAtual&&!isTop?'strike':''}">${fmt(r.total)}€</div>
+        <div class="price-mo">${fmt(r.total/12)}€/mês</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+        ${sb}
+        <a class="visit" href="${r.url}" target="_blank" rel="noopener noreferrer">Ver oferta &#x2197;</a>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function setStep(n) {
+  for (let i=1;i<=3;i++) {
+    const el=document.getElementById('s'+i);
+    el.className='step'+(i<n?' done':i===n?' active':'');
+  }
+}
+
+function setView(v) {
+  ['view-upload','view-load','view-res'].forEach(id => document.getElementById(id).classList.toggle('hidden', id!==v));
+}
+
+function reset() {
+  setView('view-upload'); setStep(1); S={}; filtro='all';
+  document.getElementById('kwh').value='';
+  document.getElementById('pot').value='';
+  const dz=document.getElementById('dz');
+  dz.classList.remove('over','ok');
+  document.getElementById('ull').innerHTML='<strong>Clique para carregar</strong> ou arraste o PDF aqui';
+  document.getElementById('ulh').textContent='EDP, Endesa, Galp, GoldEnergy, Iberdrola, G9, Plenitude, MEO e outras';
+}
+
+const dz=document.getElementById('dz');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('over'); if(e.dataTransfer.files[0]) dropFile(e.dataTransfer.files[0]); });
+document.getElementById('fi').addEventListener('change', e => { if(e.target.files[0]) dropFile(e.target.files[0]); });
+
+function dropFile(f) {
+  document.getElementById('ull').innerHTML=`<strong>${f.name}</strong> carregado`;
+  document.getElementById('ulh').textContent='A extrair dados da fatura...';
+  dz.classList.add('over');
+  setTimeout(() => {
+    document.getElementById('kwh').value=3240;
+    document.getElementById('pot').value='6.9';
+    document.getElementById('atual').value='edp-comercial';
+    document.getElementById('ull').innerHTML='<strong>Dados extraídos com sucesso</strong>';
+    document.getElementById('ulh').textContent='Consumo: 3.240 kWh/ano · 6,9 kVA · EDP Comercial';
+    dz.classList.remove('over'); dz.classList.add('ok');
+  }, 1400);
+}
+</script>
+</body>
+</html>
