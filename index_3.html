@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AskEnergy — Energia Certa</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--ink:#1A1714;--ink2:#4A4540;--ink3:#9A948E;--paper:#FAF8F4;--paper2:#F0EDE6;--paper3:#E4E0D6;--red:#C8382A;--red2:#E85A4A;--red-bg:#FDF1F0;--green:#1A6645;--green-bg:#EBF5EF;--gold:#B8860B;--gold-bg:#FEF9EC;--r:10px;--serif:"DM Serif Display",Georgia,serif;--sans:"DM Sans",system-ui,sans-serif;--mono:"DM Mono","Consolas",monospace}
+    body{font-family:var(--sans);background:var(--paper);color:var(--ink);min-height:100vh;line-height:1.6}
+    .hero{background:var(--ink);color:var(--paper);padding:2.5rem 1.5rem 3.5rem;position:relative;overflow:hidden}
+    .hero::before{content:"";position:absolute;top:-40px;right:-60px;width:300px;height:300px;background:radial-gradient(circle,rgba(200,56,42,.18) 0%,transparent 70%);pointer-events:none}
+    .hi{max-width:760px;margin:0 auto}.lr{display:flex;align-items:center;gap:10px;margin-bottom:2rem}
+    .bolt{width:34px;height:34px;background:var(--red);clip-path:polygon(60% 0%,100% 0%,40% 50%,100% 50%,0% 100%,20% 55%,-10% 55%,60% 0%);flex-shrink:0}
+    .brand{font-family:var(--serif);font-size:22px}.brand span{color:var(--red2)}
+    .hero h1{font-family:var(--serif);font-size:clamp(26px,5vw,42px);line-height:1.15;margin-bottom:.75rem;font-weight:400}
+    .hero h1 em{font-style:normal;color:var(--red2)}
+    .hero-sub{font-size:15px;color:rgba(250,248,244,.6);max-width:460px}
+    .main{max-width:760px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+    .steps{display:flex;align-items:center;gap:6px;margin-bottom:2rem}
+    .step{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink3)}
+    .step.on{color:var(--ink);font-weight:600}.step.done{color:var(--red)}
+    .sn{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--paper3);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600}
+    .step.on .sn{background:var(--red-bg);border-color:#f5c6c2;color:var(--red)}
+    .step.done .sn{background:var(--red);border-color:var(--red);color:white}
+    .sep{color:var(--paper3);font-size:16px}
+    .card{background:var(--paper);border:1px solid var(--paper3);border-radius:var(--r);padding:2rem;margin-bottom:1.5rem;box-shadow:0 2px 12px rgba(26,23,20,.05)}
+    .ct{font-family:var(--serif);font-size:20px;font-weight:400;margin-bottom:.35rem}
+    .cs{font-size:13px;color:var(--ink3);margin-bottom:1.5rem}
+    .upload-zone{border:1.5px dashed var(--paper3);border-radius:var(--r);padding:1.75rem 1rem;text-align:center;cursor:pointer;background:var(--paper2);transition:all .15s}
+    .upload-zone:hover{background:#e8e4dc;border-color:var(--ink3)}
+    .upload-zone.over,.upload-zone.ok{border-color:var(--red);background:var(--red-bg)}
+    .ul-icon{margin:0 auto 8px;color:var(--ink3);display:block}
+    .ul-label{font-size:14px;color:var(--ink3)}.ul-label strong{color:var(--ink);font-weight:600}
+    .ul-hint{font-size:12px;color:var(--ink3);margin-top:3px}
+    input[type=file]{display:none}
+    .upload-divider{display:flex;align-items:center;gap:10px;margin:1rem 0;font-size:12px;color:var(--ink3)}
+    .upload-divider::before,.upload-divider::after{content:"";flex:1;height:1px;background:var(--paper3)}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1rem}
+    .field label{display:block;font-size:11px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--ink3);margin-bottom:6px}
+    .field input,.field select{width:100%;height:44px;padding:0 12px;border:1.5px solid var(--paper3);border-radius:8px;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15px;transition:border-color .15s,box-shadow .15s;appearance:none}
+    .field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%239A948E'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;cursor:pointer}
+    .field input:focus,.field select:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 3px rgba(200,56,42,.12)}
+    .field input.err,.api-input.err{border-color:var(--red);animation:shake .3s}
+    @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+    .nf{font-size:12px;color:var(--ink3);margin-top:1rem;padding-top:1rem;border-top:1px solid var(--paper3);line-height:1.5}
+    .nf strong{color:var(--ink2)}
+    .api-section{background:var(--paper2);border:1px solid var(--paper3);border-radius:var(--r);padding:1.25rem;margin-top:1rem}
+    .api-label{font-size:11px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--ink3);margin-bottom:6px;display:block}
+    .api-input{width:100%;height:40px;padding:0 12px;border:1.5px solid var(--paper3);border-radius:8px;background:var(--paper);color:var(--ink);font-family:var(--mono);font-size:13px;transition:border-color .15s}
+    .api-input:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 3px rgba(200,56,42,.12)}
+    .api-note{font-size:11px;color:var(--ink3);margin-top:6px;line-height:1.5}
+    .api-note a{color:var(--red);text-decoration:none}.api-note a:hover{text-decoration:underline}
+    .btn-p{width:100%;margin-top:1.25rem;height:50px;background:var(--red);color:white;border:none;border-radius:8px;font-family:var(--sans);font-size:16px;font-weight:600;cursor:pointer;transition:background .15s;display:flex;align-items:center;justify-content:center;gap:8px}
+    .btn-p:hover{background:#a82d21}
+    .btn-g{background:transparent;border:1.5px solid var(--paper3);border-radius:8px;padding:0 1.25rem;height:40px;font-family:var(--sans);font-size:13px;font-weight:500;color:var(--ink2);cursor:pointer;transition:background .15s;margin-top:1.25rem}
+    .btn-g:hover{background:var(--paper2)}
+    .loading{text-align:center;padding:3rem 1.5rem}
+    .sw{display:flex;justify-content:center;margin-bottom:1.25rem}
+    .spinner{width:28px;height:28px;border:2.5px solid var(--paper3);border-top-color:var(--red);border-radius:50%;animation:spin .65s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .lm{font-family:var(--serif);font-size:18px;margin-bottom:6px}.ls{font-size:13px;color:var(--ink3)}
+    .eb{background:var(--red-bg);border:1px solid #f5c6c2;border-radius:var(--r);padding:1.25rem 1.5rem;margin-bottom:1.25rem}
+    .eb strong{color:var(--red)}.eb p{font-size:14px;color:var(--ink2);margin-top:4px}
+    .src{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--green);background:var(--green-bg);border-radius:4px;padding:3px 8px;font-weight:600;margin-bottom:1.25rem}
+    .sd{width:6px;height:6px;border-radius:50%;background:var(--green)}
+    .rh{margin-bottom:1.5rem}.rt{font-family:var(--serif);font-size:22px;font-weight:400;margin-bottom:4px}
+    .rm{font-size:13px;color:var(--ink3)}
+    .tag{display:inline-flex;align-items:center;gap:5px;background:var(--green-bg);color:var(--green);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;letter-spacing:.4px;margin-right:6px}
+    .tag.gold{background:var(--gold-bg);color:var(--gold)}
+    .sum{display:grid;grid-template-columns:1fr auto 1fr;gap:1rem;background:var(--ink);color:var(--paper);border-radius:var(--r);padding:1.5rem;margin-bottom:1.5rem;align-items:center}
+    .sum.na{grid-template-columns:1fr 1fr}
+    .sl{font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:rgba(250,248,244,.5);margin-bottom:4px;font-weight:600}
+    .sv{font-family:var(--mono);font-size:30px;font-weight:500;line-height:1}
+    .sv.r{color:var(--red2)}.sv.g{color:#5DE6A0}
+    .ss{font-size:12px;color:rgba(250,248,244,.55);margin-top:4px}
+    .sa{display:flex;align-items:center;justify-content:center}
+    .sk{display:inline-block;border-radius:6px;padding:4px 10px;font-size:13px;font-weight:600;margin-top:8px}
+    .sk.p{background:rgba(93,230,160,.15);color:#5DE6A0}.sk.n{background:rgba(232,90,74,.15);color:var(--red2)}
+    .sk.s{background:rgba(250,248,244,.08);color:rgba(250,248,244,.5)}
+    .flt{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1rem}
+    .fb{background:transparent;border:1.5px solid var(--paper3);border-radius:20px;padding:5px 14px;font-family:var(--sans);font-size:12px;font-weight:500;color:var(--ink3);cursor:pointer;transition:all .12s}
+    .fb.on{background:var(--red-bg);border-color:#f5c6c2;color:var(--red);font-weight:600}
+    .fb:hover:not(.on){background:var(--paper2);color:var(--ink2)}
+    .rl{display:flex;flex-direction:column;gap:8px}
+    .rc{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:12px;padding:1.1rem 1.25rem;background:var(--paper);border:1.5px solid var(--paper3);border-radius:var(--r);transition:border-color .12s,box-shadow .12s}
+    .rc:hover{box-shadow:0 3px 12px rgba(26,23,20,.07)}.rc.w{border-color:#C8382A;border-width:2px}.rc.cur{background:var(--paper2)}
+    .br{display:flex;gap:6px;margin-bottom:5px;align-items:center}
+    .b{display:inline-flex;align-items:center;gap:4px;border-radius:4px;padding:1px 7px;font-size:10px;font-weight:700;letter-spacing:.3px;text-transform:uppercase}
+    .b.bst{background:var(--red-bg);color:var(--red)}.b.bc{background:var(--paper3);color:var(--ink3)}
+    .b.bi{background:var(--gold-bg);color:var(--gold)}.b.bf{background:var(--green-bg);color:var(--green)}
+    .rn{font-size:15px;font-weight:600}.rta{font-size:12px;color:var(--ink3);margin-top:2px;line-height:1.4}
+    .rp{font-family:var(--mono);font-size:21px;font-weight:500;text-align:right}
+    .rp.st{text-decoration:line-through;color:var(--ink3);font-size:18px}
+    .rmo{font-size:12px;color:var(--ink3);text-align:right;margin-top:2px}
+    .rsw{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+    .rs{display:inline-flex;align-items:center;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;white-space:nowrap}
+    .rs.p{background:var(--green-bg);color:var(--green)}.rs.n{background:var(--red-bg);color:var(--red)}.rs.s{background:var(--paper2);color:var(--ink3)}
+    .rl-a{display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:500;color:var(--ink3);text-decoration:none;border:1px solid var(--paper3);border-radius:6px;padding:4px 10px;transition:all .12s;white-space:nowrap}
+    .rl-a:hover{background:var(--paper2);border-color:var(--ink3);color:var(--ink)}
+    .hidden{display:none!important}
+    .fn{font-size:11.5px;color:var(--ink3);margin-top:1.5rem;padding:1rem 1.25rem;background:var(--paper2);border-radius:var(--r);border-left:3px solid var(--paper3);line-height:1.7}
+    .fn strong{color:var(--ink2)}
+    @media(max-width:580px){.sum,.sum.na{grid-template-columns:1fr}.sa{display:none}.rc{grid-template-columns:1fr;gap:8px}.rp,.rmo{text-align:left}.rsw{align-items:flex-start}}
+  </style>
+</head>
+<body>
+<div class="hero"><div class="hi">
+  <div class="lr"><div class="bolt"></div><div class="brand"><span>Ask</span>Energy</div></div>
+  <h1>Compare todas as tarifas.<br><em>Com os seus dados reais.</em></h1>
+  <p class="hero-sub">Sem estimativas. O seu consumo, os preços reais.</p>
+</div></div>
+<div class="main">
+  <div class="steps">
+    <div class="step on" id="st1"><span class="sn">1</span>Dados</div>
+    <span class="sep">›</span>
+    <div class="step" id="st2"><span class="sn">2</span>Comparar</div>
+    <span class="sep">›</span>
+    <div class="step" id="st3"><span class="sn">3</span>Resultados</div>
+  </div>
+
+  <div id="vf">
+    <div class="card">
+      <div class="ct">Carregue a sua fatura ou introduza os dados</div>
+      <div class="cs">Carregue o PDF da sua fatura para extracção automática, ou introduza manualmente.</div>
+      <div class="upload-zone" id="dz" onclick="document.getElementById('fi').click()">
+        <svg class="ul-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="26" height="26">
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/>
+        </svg>
+        <div class="ul-label" id="ull"><strong>Clique para carregar</strong> ou arraste a fatura aqui</div>
+        <div class="ul-hint" id="ulh">EDP, Endesa, Galp, GoldEnergy, Iberdrola, G9, Plenitude, MEO e outras</div>
+      </div>
+      <input type="file" id="fi" accept=".pdf,.jpg,.jpeg,.png">
+      <div class="upload-divider">ou introduza manualmente</div>
+      <div class="grid">
+        <div class="field"><label for="kwh">Consumo anual (kWh)</label>
+          <input type="number" id="kwh" placeholder="ex: 4272" min="100" max="200000" autocomplete="off">
+        </div>
+        <div class="field"><label for="pot">Potência contratada (kVA)</label>
+          <select id="pot">
+            <option value="">Selecionar...</option>
+            <option value="0">1,15 kVA</option><option value="1">2,3 kVA</option>
+            <option value="2">3,45 kVA</option><option value="3">4,60 kVA</option>
+            <option value="4">5,75 kVA</option><option value="5">6,9 kVA</option>
+            <option value="6">10,35 kVA</option><option value="7">13,8 kVA</option>
+          </select>
+        </div>
+        <div class="field"><label for="ciclo">Ciclo horário</label>
+          <select id="ciclo"><option value="1">Simples</option><option value="2">Bi-horário</option></select>
+        </div>
+        <div class="field"><label for="forn">Fornecedor atual</label>
+          <select id="forn">
+            <option value="">Não sei / Outro</option>
+            <option>EDP Comercial</option><option>Endesa</option><option>GALP</option>
+            <option>GoldEnergy</option><option>Iberdrola</option><option>G9 Energy</option>
+            <option>Plenitude</option><option>MEO Energia</option><option>Mercado Regulado</option>
+            <option>Ibelectra</option><option>LUZiGAS</option><option>Repsol</option>
+            <option>Nabalia Energia</option><option>Nossa Energia</option><option>YES ENERGY</option>
+            <option>Coopérnico</option><option>Muon Electric</option><option>EZU Energia</option>
+            <option>Usenergy</option><option>OENEO ENERGY</option><option>LuzBoa</option>
+            <option>Audax Renovables</option><option>Alfa Energia</option><option>Portulogos</option>
+            <option>LOGICA Energy</option>
+          </select>
+        </div>
+      </div>
+      <div class="nf"><strong>Consumo anual:</strong> se a sua fatura mostra consumo mensal (ex: 356 kWh/mês), multiplique por 12 (= 4.272 kWh/ano).</div>
+      <div class="api-section">
+        <label class="api-label" for="apikey">Chave API Anthropic</label>
+        <input class="api-input" type="password" id="apikey" placeholder="sk-ant-api03-..." autocomplete="off" spellcheck="false">
+        <div class="api-note">
+          Opcional — necessária apenas para extracção automática de dados da fatura.
+          Obtenha gratuitamente em <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>.
+          Guardada apenas no seu browser, nunca enviada para terceiros.
+        </div>
+      </div>
+      <button class="btn-p" onclick="go()">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M14 14L10.5 10.5M6.5 12A5.5 5.5 0 1 0 6.5 1a5.5 5.5 0 0 0 0 11z" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Comparar tarifários
+      </button>
+    </div>
+  </div>
+
+  <div id="vl" class="hidden">
+    <div class="card loading">
+      <div class="sw"><div class="spinner"></div></div>
+      <div class="lm" id="lm">A comparar tarifários...</div>
+      <div class="ls" id="ls">Aguarde um momento</div>
+    </div>
+  </div>
+
+  <div id="ve" class="hidden">
+    <div class="eb"><strong>Erro na consulta.</strong><p id="em">Verifique a chave API e tente novamente.</p></div>
+    <button class="btn-g" onclick="rst()">← Tentar novamente</button>
+  </div>
+
+  <div id="vr" class="hidden">
+    <div class="src"><span class="sd"></span>Dados em tempo real · <span id="rd"></span></div>
+    <div class="rh"><div class="rt" id="rtt"></div><div class="rm" id="rmm"></div></div>
+    <div class="sum" id="sb"></div>
+    <div class="flt">
+      <button class="fb on" id="fba" onclick="filt('all',this)">Todos</button>
+      <button class="fb" onclick="filt('fix',this)">Tarifa fixa</button>
+      <button class="fb" onclick="filt('idx',this)">Tarifa indexada</button>
+    </div>
+    <div class="rl" id="rl"></div>
+    <div class="fn">
+      <strong>Dados:</strong> Preços em tempo real, mercado liberalizado português.<br>
+      Valores incluem IVA e todos os encargos. <strong>IDX</strong> = indexada ao mercado OMIE (variável). <strong>FIX</strong> = fixa.<br>
+      A mudança de fornecedor não interrompe o fornecimento.
+    </div>
+    <button class="btn-g" onclick="rst()">← Nova consulta</button>
+  </div>
+</div>
+
+<script>
+const PL={'0':'1,15 kVA','1':'2,3 kVA','2':'3,45 kVA','3':'4,60 kVA','4':'5,75 kVA','5':'6,9 kVA','6':'10,35 kVA','7':'13,8 kVA'};
+let ST={},RES=[],FLT='all';
+function fmt(n){return n.toLocaleString('pt-PT',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function show(id){['vf','vl','ve','vr'].forEach(v=>document.getElementById(v).classList.toggle('hidden',v!==id));}
+function ss(n){for(let i=1;i<=3;i++){const e=document.getElementById('st'+i);e.className='step'+(i<n?' done':i===n?' on':'');}}
+function loadKey(){try{const k=localStorage.getItem('ae_k');if(k)document.getElementById('apikey').value=k;}catch(e){}}
+function saveKey(k){try{localStorage.setItem('ae_k',k);}catch(e){}}
+
+async function callClaude(apiKey, messages, tools){
+  const body={model:'claude-sonnet-4-20250514',max_tokens:8000,messages};
+  if(tools) body.tools=tools;
+  const r=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify(body)
+  });
+  if(!r.ok){const e=await r.json();throw new Error(e.error?.message||'Erro API '+r.status);}
+  return r.json();
+}
+
+// Upload / drag-drop
+(function(){
+  const dz=document.getElementById('dz');
+  dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('over');});
+  dz.addEventListener('dragleave',()=>dz.classList.remove('over'));
+  dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('over');if(e.dataTransfer.files[0])hf(e.dataTransfer.files[0]);});
+  document.getElementById('fi').addEventListener('change',e=>{if(e.target.files[0])hf(e.target.files[0]);});
+})();
+
+function hf(f){
+  const dz=document.getElementById('dz');
+  const apiKey=document.getElementById('apikey').value.trim();
+  document.getElementById('ull').innerHTML='<strong>'+f.name+'</strong> carregado';
+  dz.classList.add('over');
+  if(!apiKey){
+    document.getElementById('ulh').textContent='Fatura carregada. Introduza a chave API para extracção automática, ou preencha os campos manualmente.';
+    dz.classList.remove('over');dz.classList.add('ok');
+    return;
+  }
+  document.getElementById('ulh').textContent='A extrair dados da fatura com IA...';
+  const reader=new FileReader();
+  reader.onload=async function(ev){
+    const b64=ev.target.result.split(',')[1];
+    const mime=f.type||'application/pdf';
+    try{
+      const data=await callClaude(apiKey,[{role:'user',content:[
+        {type:'image',source:{type:'base64',media_type:mime,data:b64}},
+        {type:'text',text:'Fatura de eletricidade portuguesa. Extrai os seguintes dados e responde APENAS em JSON:\n\nREGRA PARA O CONSUMO ANUAL (campo kwh):\n1. Se a fatura tiver histórico de consumo dos últimos 12 meses (gráfico ou tabela com valores mensais), calcula a MÉDIA dos 12 meses e multiplica por 12 para obter o consumo anual real.\n2. Se NÃO houver histórico de 12 meses, usa o consumo do mês desta fatura multiplicado por 12.\nEsta regra é CRÍTICA — nunca uses apenas o mês da fatura se existir histórico anual na fatura.\n\nResposta JSON: {"kwh":N,"pot":"X","forn":"NOME","metodo":"historico_12m"|"mes_x12"}\nonde pot é índice: 0=1.15kVA, 1=2.3kVA, 2=3.45kVA, 3=4.6kVA, 4=5.75kVA, 5=6.9kVA, 6=10.35kVA, 7=13.8kVA'}
+      ]}]);
+      const text=data.content[0].text.replace(/```json|```/g,'').trim();
+      const result=JSON.parse(text);
+      if(result.kwh) document.getElementById('kwh').value=result.kwh;
+      if(result.pot!==undefined) document.getElementById('pot').value=String(result.pot);
+      if(result.forn) document.getElementById('forn').value=result.forn;
+      document.getElementById('ull').innerHTML='<strong>Dados extraídos</strong> — confirme e ajuste se necessário';
+      const metodo=result.metodo==='historico_12m'?'média 12 meses':'mês×12';
+      document.getElementById('ulh').textContent='Potência: '+(PL[result.pot]||result.pot)+' · Consumo: '+(result.kwh||'?')+' kWh/ano ('+metodo+') · '+(result.forn||'?');
+      dz.classList.remove('over');dz.classList.add('ok');
+    }catch(e){
+      document.getElementById('ull').innerHTML='<strong>Não foi possível extrair</strong> — introduza manualmente';
+      document.getElementById('ulh').textContent=e.message||'Erro desconhecido';
+      dz.classList.remove('over');
+    }
+  };
+  reader.readAsDataURL(f);
+}
+
+async function go(){
+  const kwh=parseFloat(document.getElementById('kwh').value);
+  const pot=document.getElementById('pot').value;
+  const cy=document.getElementById('ciclo').value;
+  const fn=document.getElementById('forn').value;
+  let err=false;
+  if(!kwh||kwh<100){const e=document.getElementById('kwh');e.classList.add('err');e.focus();setTimeout(()=>e.classList.remove('err'),1500);err=true;}
+  if(pot===''){const e=document.getElementById('pot');e.classList.add('err');if(!err)e.focus();setTimeout(()=>e.classList.remove('err'),1500);err=true;}
+  if(err)return;
+  ST={kwh,pot,cy,fn};FLT='all';
+  show('vl');ss(2);
+  const msgs=[
+    ['A comparar tarifários em tempo real...','Aguarde um momento'],
+    ['A receber tarifários...','25 comercializadores do mercado liberalizado'],
+    ['A processar resultados...','A ordenar por custo anual, IVA incluído']
+  ];
+  let mi=0;
+  const iv=setInterval(()=>{if(mi<msgs.length){document.getElementById('lm').textContent=msgs[mi][0];document.getElementById('ls').textContent=msgs[mi][1];mi++;}},2000);
+  try{
+    const params=new URLSearchParams({
+      idioma:'1',socialOffer:'1',filtro_IndexacaoSpot:'1',filtro_ServicosAdicionais:'0',
+      filtro_SemRestricoesAdicionais:'1',filtro_SemPrecosIndexados:'1',filtro_SemReembolsos:'1',
+      filtro_energia100Renovavel:'0',filtro_Fidelizacao:'1',filtro_FamiliasNumerosas:'0',
+      filtro_NovosClientes:'1',pageStartIndex:'0',pageStep:'25',filtro_comercializadores:'',
+      filtro_contratacao:'1',filtro_faturacao:'1',filtro_pagamento:'1',filtro_TipoOfertaELE:'1',
+      filtro_TipoOfertaGas:'1',filtro_gas100Renovavel:'0',caseType:'3',electFastEuro:'',
+      electFastDays:'',electSupply:String(pot),cycle:String(cy),electCalendar:'2',
+      electCalendarPeriodStart:'',electCalendarPeriodEnd:'',electPonta:String(Math.round(kwh)),
+      electCheias:'',electVazio:'',showElectPrice:'false',electFaturaPonta:'',
+      electFaturaCheias:'',electFaturaVazio:'',electFaturaFixo:''
+    }).toString();
+
+    // Chamada directa ao proxy Cloudflare — sem CORS, sem Claude API
+    const PROXY='https://quiet-resonance-88e5.rodrigues-duartepolonia.workers.dev';
+    const resp=await fetch(PROXY,{
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:params
+    });
+    clearInterval(iv);
+    if(!resp.ok) throw new Error('Erro ao obter tarifários (HTTP '+resp.status+').');
+    const data_=await resp.json();
+    if(!data_||!data_.Resultados||!data_.Resultados.length) throw new Error('Não foi possível obter tarifários. Tente novamente.');
+    RES=data_.Resultados.map(r=>({
+      n:r.Oferta[0].Comercializador,ta:r.Oferta[0].Nome,v:r.PrecoTotal,
+      i:r.Oferta[0].IndexacaoSpot==='S',u:r.Oferta[0].Url||r.Oferta[0].UrlComercializador||''
+    })).sort((a,b)=>a.v-b.v);
+    render();
+  }catch(e){clearInterval(iv);document.getElementById('em').textContent=e.message||'Erro desconhecido.';show('ve');ss(1);}
+}
+
+function render(){
+  show('vr');ss(3);
+  const{kwh,pot,cy,fn}=ST;
+  const hoje=new Date().toLocaleDateString('pt-PT',{day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('rd').textContent=hoje;
+  document.getElementById('rtt').textContent=RES.length+' tarifários para o seu perfil';
+  document.getElementById('rmm').innerHTML='<span class="tag">⚡ '+kwh.toLocaleString('pt-PT')+' kWh/ano</span><span class="tag">'+PL[pot]+'</span><span class="tag">'+(cy==='1'?'Simples':'Bi-horário')+'</span>'+(fn?'<span class="tag gold">Actual: '+fn+'</span>':'');
+  const best=RES[0],av=fn?RES.find(r=>r.n===fn||r.n.toLowerCase().includes(fn.toLowerCase())||fn.toLowerCase().includes(r.n.toLowerCase())):null,atv=av?av.v:null,p=atv?Math.round(atv-best.v):null;
+  const sb=document.getElementById('sb');
+  if(atv){
+    sb.className='sum';
+    sb.innerHTML='<div><div class="sl">Fatura actual estimada</div><div class="sv r">'+fmt(atv)+'€</div><div class="ss">'+fmt(atv/12)+'€/mês · '+fn+'</div></div><div class="sa"><svg width="32" height="14" viewBox="0 0 32 14" fill="none"><path d="M0 7h28M22 1l7 6-7 6" stroke="rgba(250,248,244,.25)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div><div class="sl">Melhor oferta disponível</div><div class="sv g">'+fmt(best.v)+'€</div><div class="ss">'+fmt(best.v/12)+'€/mês · '+best.n+'</div><span class="sk '+(p>0?'p':p<0?'n':'s')+'">'+(p>0?'Poupa '+p+'€/ano':p<0?'+'+Math.abs(p)+'€/ano':'Contrato actual é o mais barato')+'</span></div>';
+  }else{
+    sb.className='sum na';
+    sb.innerHTML='<div><div class="sl">Melhor oferta</div><div class="sv g">'+fmt(best.v)+'€/ano</div><div class="ss">'+fmt(best.v/12)+'€/mês · '+best.n+'</div></div><div><div class="sl">Tarifários analisados</div><div class="sv">'+RES.length+'</div><div class="ss">'+hoje+'</div></div>';
+  }
+  document.getElementById('fba').textContent='Todos ('+RES.length+')';
+  rl();
+}
+
+function rl(){
+  const{fn}=ST,av=fn?RES.find(r=>r.n===fn||r.n.toLowerCase().includes(fn.toLowerCase())||fn.toLowerCase().includes(r.n.toLowerCase())):null,atv=av?av.v:null;
+  let lst=RES;
+  if(FLT==='fix')lst=lst.filter(r=>!r.i);
+  if(FLT==='idx')lst=lst.filter(r=>r.i);
+  document.getElementById('rl').innerHTML=lst.map((r,i)=>{
+    const iB=i===0&&FLT==='all',iC=r.n===fn,d=atv?Math.round(atv-r.v):null;
+    const bd=(iB?'<span class="b bst">★ Mais barato</span>':'')+(iC&&!iB?'<span class="b bc">Contrato actual</span>':'')+
+      '<span class="b '+(r.i?'bi':'bf')+'">'+(r.i?'IDX':'FIX')+'</span>';
+    const sv=d!==null?'<span class="rs '+(d>0?'p':d<0?'n':'s')+'">'+(d>0?'Poupa '+d+'€/ano':d<0?'+'+Math.abs(d)+'€/ano':'Contrato actual')+'</span>':'';
+    const lk=r.u?'<a class="rl-a" href="'+r.u+'" target="_blank" rel="noopener">Ver oferta ↗</a>':'';
+    return '<div class="rc '+(iB?'w':'')+' '+(iC&&!iB?'cur':'')+' "><div><div class="br">'+bd+'</div><div class="rn">'+r.n+'</div><div class="rta">'+r.ta+'</div></div><div><div class="rp '+(iC&&!iB?'st':'')+' ">'+fmt(r.v)+'€</div><div class="rmo">'+fmt(r.v/12)+'€/mês</div></div><div class="rsw">'+sv+lk+'</div></div>';
+  }).join('');
+}
+
+function filt(t,btn){FLT=t;document.querySelectorAll('.fb').forEach(b=>b.classList.remove('on'));btn.classList.add('on');rl();}
+function rst(){
+  show('vf');ss(1);ST={};RES=[];FLT='all';
+  document.getElementById('kwh').value='';document.getElementById('pot').value='';
+  const dz=document.getElementById('dz');dz.classList.remove('over','ok');
+  document.getElementById('ull').innerHTML='<strong>Clique para carregar</strong> ou arraste o PDF aqui';
+  document.getElementById('ulh').textContent='EDP, Endesa, Galp, GoldEnergy, Iberdrola, G9, Plenitude, MEO e outras';
+}
+loadKey();
+</script>
+</body>
+</html>
