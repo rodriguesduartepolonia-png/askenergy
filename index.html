@@ -167,15 +167,7 @@
         </div>
       </div>
       <div class="nf"><strong>Consumo anual:</strong> se a sua fatura mostra consumo mensal (ex: 356 kWh/mês), multiplique por 12 (= 4.272 kWh/ano).</div>
-      <div class="api-section">
-        <label class="api-label" for="apikey">Chave API Anthropic</label>
-        <input class="api-input" type="password" id="apikey" placeholder="sk-ant-api03-..." autocomplete="off" spellcheck="false">
-        <div class="api-note">
-          Opcional — necessária apenas para extracção automática de dados da fatura.
-          Obtenha gratuitamente em <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>.
-          Guardada apenas no seu browser, nunca enviada para terceiros.
-        </div>
-      </div>
+
       <button class="btn-p" onclick="go()">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M14 14L10.5 10.5M6.5 12A5.5 5.5 0 1 0 6.5 1a5.5 5.5 0 0 0 0 11z" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
         Comparar tarifários
@@ -221,18 +213,18 @@ let ST={},RES=[],FLT='all';
 function fmt(n){return n.toLocaleString('pt-PT',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function show(id){['vf','vl','ve','vr'].forEach(v=>document.getElementById(v).classList.toggle('hidden',v!==id));}
 function ss(n){for(let i=1;i<=3;i++){const e=document.getElementById('st'+i);e.className='step'+(i<n?' done':i===n?' on':'');}}
-function loadKey(){try{const k=localStorage.getItem('ae_k');if(k)document.getElementById('apikey').value=k;}catch(e){}}
-function saveKey(k){try{localStorage.setItem('ae_k',k);}catch(e){}}
 
-async function callClaude(apiKey, messages, tools){
+
+
+async function callClaude(messages){
   const body={model:'claude-sonnet-4-20250514',max_tokens:8000,messages};
-  if(tools) body.tools=tools;
-  const r=await fetch('https://api.anthropic.com/v1/messages',{
+  const PROXY='https://quiet-resonance-88e5.rodrigues-duartepolonia.workers.dev/extract';
+  const r=await fetch(PROXY,{
     method:'POST',
-    headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    headers:{'Content-Type':'application/json'},
     body:JSON.stringify(body)
   });
-  if(!r.ok){const e=await r.json();throw new Error(e.error?.message||'Erro API '+r.status);}
+  if(!r.ok){const e=await r.json();throw new Error(e.error?.message||'Erro ao extrair dados ('+r.status+')');}
   return r.json();
 }
 
@@ -247,14 +239,8 @@ async function callClaude(apiKey, messages, tools){
 
 function hf(f){
   const dz=document.getElementById('dz');
-  const apiKey=document.getElementById('apikey').value.trim();
   document.getElementById('ull').innerHTML='<strong>'+f.name+'</strong> carregado';
   dz.classList.add('over');
-  if(!apiKey){
-    document.getElementById('ulh').textContent='Fatura carregada. Introduza a chave API para extracção automática, ou preencha os campos manualmente.';
-    dz.classList.remove('over');dz.classList.add('ok');
-    return;
-  }
   document.getElementById('ulh').textContent='A extrair dados da fatura com IA...';
   const reader=new FileReader();
   reader.onload=async function(ev){
@@ -265,7 +251,7 @@ function hf(f){
       const fileBlock=isPdf
         ?{type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}}
         :{type:'image',source:{type:'base64',media_type:mime,data:b64}};
-      const data=await callClaude(apiKey,[{role:'user',content:[
+      const data=await callClaude([{role:'user',content:[
         fileBlock,
         {type:'text',text:'Fatura de eletricidade portuguesa. Extrai os seguintes dados e responde APENAS em JSON:\n\nREGRA PARA O CONSUMO ANUAL (campo kwh):\n1. Se a fatura tiver histórico de consumo dos últimos 12 meses (gráfico ou tabela com valores mensais), calcula a MÉDIA dos 12 meses e multiplica por 12 para obter o consumo anual real.\n2. Se NÃO houver histórico de 12 meses, usa o consumo do mês desta fatura multiplicado por 12.\nEsta regra é CRÍTICA — nunca uses apenas o mês da fatura se existir histórico anual na fatura.\n\nResposta JSON: {"kwh":N,"pot":"X","forn":"NOME","metodo":"historico_12m"|"mes_x12"}\nonde pot é índice: 0=1.15kVA, 1=2.3kVA, 2=3.45kVA, 3=4.6kVA, 4=5.75kVA, 5=6.9kVA, 6=10.35kVA, 7=13.8kVA'}
       ]}]);
@@ -381,7 +367,6 @@ function rst(){
   document.getElementById('ull').innerHTML='<strong>Clique para carregar</strong> ou arraste o PDF aqui';
   document.getElementById('ulh').textContent='EDP, Endesa, Galp, GoldEnergy, Iberdrola, G9, Plenitude, MEO e outras';
 }
-loadKey();
 </script>
 </body>
 </html>
