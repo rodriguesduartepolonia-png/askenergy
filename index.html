@@ -263,8 +263,10 @@ function hf(f){
       if(result.pot!==undefined) document.getElementById('pot').value=String(result.pot);
       if(result.forn) document.getElementById('forn').value=result.forn;
       document.getElementById('ull').innerHTML='<strong>Dados extraídos</strong> — confirme e ajuste se necessário';
-      const metodo=result.metodo==='historico_12m'?'média 12 meses':'mês×12';
-      document.getElementById('ulh').textContent='Potência: '+(PL[result.pot]||result.pot)+' · Consumo: '+(result.kwh||'?')+' kWh/ano ('+metodo+') · '+(result.forn||'?');
+      const metodo=result.metodo==='historico_12m'?'historico_12m':'mes_x12';
+      window._metodoConsumo=metodo;
+      const metodoLabel=metodo==='historico_12m'?'média 12 meses':'mês×12';
+      document.getElementById('ulh').textContent='Potência: '+(PL[result.pot]||result.pot)+' · Consumo: '+(result.kwh||'?')+' kWh/ano ('+metodoLabel+') · '+(result.forn||'?');
       dz.classList.remove('over');dz.classList.add('ok');
     }catch(e){
       document.getElementById('ull').innerHTML='<strong>Não foi possível extrair</strong> — introduza manualmente';
@@ -284,7 +286,7 @@ async function go(){
   if(!kwh||kwh<100){const e=document.getElementById('kwh');e.classList.add('err');e.focus();setTimeout(()=>e.classList.remove('err'),1500);err=true;}
   if(pot===''){const e=document.getElementById('pot');e.classList.add('err');if(!err)e.focus();setTimeout(()=>e.classList.remove('err'),1500);err=true;}
   if(err)return;
-  ST={kwh,pot,cy,fn};FLT='all';
+  ST={kwh,pot,cy,fn,metodo:window._metodoConsumo||'mes_x12'};FLT='all';
   show('vl');ss(2);
   const msgs=[
     ['A comparar tarifários em tempo real...','Aguarde um momento'],
@@ -342,9 +344,10 @@ function render(){
   document.getElementById('rtt').textContent=RES.length+' tarifários para o seu perfil';
   document.getElementById('rmm').innerHTML='<span class="tag">⚡ '+kwh.toLocaleString('pt-PT')+' kWh/ano</span><span class="tag">'+PL[pot]+'</span><span class="tag">'+(cy==='1'?'Simples':'Bi-horário')+'</span>'+(fn?'<span class="tag gold">Actual: '+fn+'</span>':'');
   const best=RES[0];
+  const metodoLabel=ST.metodo==='historico_12m'?'média dos últimos 12 meses':'mês da fatura × 12';
   const sb=document.getElementById('sb');
   sb.className='sum na';
-  sb.innerHTML='<div><div class="sl">Melhor oferta disponível</div><div class="sv g">'+fmt(best.v)+'€/ano</div><div class="ss">'+fmt(best.v/12)+'€/mês · '+best.n+'</div></div><div><div class="sl">Tarifários analisados</div><div class="sv">'+RES.length+'</div><div class="ss">'+hoje+'</div></div>';
+  sb.innerHTML='<div><div class="sl">Consumo real utilizado</div><div class="sv" style="font-size:22px">'+ST.kwh.toLocaleString('pt-PT')+' kWh/ano</div><div class="ss">'+metodoLabel+'</div></div><div><div class="sl">Melhor oferta disponível</div><div class="sv g">'+fmt(best.v)+'€/ano</div><div class="ss">'+fmt(best.v/12)+'€/mês · '+best.n+'</div></div>';
   document.getElementById('fba').textContent='Todos ('+RES.length+')';
   rl();
 }
@@ -356,9 +359,9 @@ function rl(){
   if(FLT==='idx')lst=lst.filter(r=>r.i);
   document.getElementById('rl').innerHTML=lst.map((r,i)=>{
     const iB=i===0&&FLT==='all',iC=r.n===fn;
-    const bd=(iB?'<span class="b bst">★ Mais barato</span>':'')+(iC&&!iB?'<span class="b bc">Contrato actual</span>':'')+
+    const bd=(iB?'<span class="b bst">★ Mais barato</span>':'')+(iC?'<span class="b bc">Contrato actual</span>':'')+
       '<span class="b '+(r.i?'bi':'bf')+'">'+(r.i?'IDX':'FIX')+'</span>';
-    const sv=iC?'<span class="rs s">Contrato actual</span>':'';
+    const sv=iC&&!iB?'<span class="rs s">Pode renegociar</span>':'';
     const lk=r.u?'<a class="rl-a" href="'+r.u+'" target="_blank" rel="noopener">Ver oferta ↗</a>':'';
     return '<div class="rc '+(iB?'w':'')+' '+(iC&&!iB?'cur':'')+' "><div><div class="br">'+bd+'</div><div class="rn">'+r.n+'</div><div class="rta">'+r.ta+'</div></div><div><div class="rp '+(iC&&!iB?'st':'')+' ">'+fmt(r.v)+'€</div><div class="rmo">'+fmt(r.v/12)+'€/mês</div></div><div class="rsw">'+sv+lk+'</div></div>';
   }).join('');
