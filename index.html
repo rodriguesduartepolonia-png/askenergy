@@ -341,29 +341,24 @@ function render(){
   document.getElementById('rd').textContent=hoje;
   document.getElementById('rtt').textContent=RES.length+' tarifários para o seu perfil';
   document.getElementById('rmm').innerHTML='<span class="tag">⚡ '+kwh.toLocaleString('pt-PT')+' kWh/ano</span><span class="tag">'+PL[pot]+'</span><span class="tag">'+(cy==='1'?'Simples':'Bi-horário')+'</span>'+(fn?'<span class="tag gold">Actual: '+fn+'</span>':'');
-  const best=RES[0],av=fn?RES.find(r=>r.n===fn||r.n.toLowerCase().includes(fn.toLowerCase())||fn.toLowerCase().includes(r.n.toLowerCase())):null,atv=av?av.v:null,p=atv?Math.round(atv-best.v):null;
+  const best=RES[0];
   const sb=document.getElementById('sb');
-  if(atv){
-    sb.className='sum';
-    sb.innerHTML='<div><div class="sl">Fatura actual estimada</div><div class="sv r">'+fmt(atv)+'€</div><div class="ss">'+fmt(atv/12)+'€/mês · '+fn+'</div></div><div class="sa"><svg width="32" height="14" viewBox="0 0 32 14" fill="none"><path d="M0 7h28M22 1l7 6-7 6" stroke="rgba(250,248,244,.25)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div><div class="sl">Melhor oferta disponível</div><div class="sv g">'+fmt(best.v)+'€</div><div class="ss">'+fmt(best.v/12)+'€/mês · '+best.n+'</div><span class="sk '+(p>0?'p':p<0?'n':'s')+'">'+(p>0?'Poupa '+p+'€/ano':p<0?'+'+Math.abs(p)+'€/ano':'Contrato actual é o mais barato')+'</span></div>';
-  }else{
-    sb.className='sum na';
-    sb.innerHTML='<div><div class="sl">Melhor oferta</div><div class="sv g">'+fmt(best.v)+'€/ano</div><div class="ss">'+fmt(best.v/12)+'€/mês · '+best.n+'</div></div><div><div class="sl">Tarifários analisados</div><div class="sv">'+RES.length+'</div><div class="ss">'+hoje+'</div></div>';
-  }
+  sb.className='sum na';
+  sb.innerHTML='<div><div class="sl">Melhor oferta disponível</div><div class="sv g">'+fmt(best.v)+'€/ano</div><div class="ss">'+fmt(best.v/12)+'€/mês · '+best.n+'</div></div><div><div class="sl">Tarifários analisados</div><div class="sv">'+RES.length+'</div><div class="ss">'+hoje+'</div></div>';
   document.getElementById('fba').textContent='Todos ('+RES.length+')';
   rl();
 }
 
 function rl(){
-  const{fn}=ST,av=fn?RES.find(r=>r.n===fn||r.n.toLowerCase().includes(fn.toLowerCase())||fn.toLowerCase().includes(r.n.toLowerCase())):null,atv=av?av.v:null;
+  const{fn}=ST;
   let lst=RES;
   if(FLT==='fix')lst=lst.filter(r=>!r.i);
   if(FLT==='idx')lst=lst.filter(r=>r.i);
   document.getElementById('rl').innerHTML=lst.map((r,i)=>{
-    const iB=i===0&&FLT==='all',iC=r.n===fn,d=atv?Math.round(atv-r.v):null;
+    const iB=i===0&&FLT==='all',iC=r.n===fn;
     const bd=(iB?'<span class="b bst">★ Mais barato</span>':'')+(iC&&!iB?'<span class="b bc">Contrato actual</span>':'')+
       '<span class="b '+(r.i?'bi':'bf')+'">'+(r.i?'IDX':'FIX')+'</span>';
-    const sv=d!==null?'<span class="rs '+(d>0?'p':d<0?'n':'s')+'">'+(d>0?'Poupa '+d+'€/ano':d<0?'+'+Math.abs(d)+'€/ano':'Contrato actual')+'</span>':'';
+    const sv=iC?'<span class="rs s">Contrato actual</span>':'';
     const lk=r.u?'<a class="rl-a" href="'+r.u+'" target="_blank" rel="noopener">Ver oferta ↗</a>':'';
     return '<div class="rc '+(iB?'w':'')+' '+(iC&&!iB?'cur':'')+' "><div><div class="br">'+bd+'</div><div class="rn">'+r.n+'</div><div class="rta">'+r.ta+'</div></div><div><div class="rp '+(iC&&!iB?'st':'')+' ">'+fmt(r.v)+'€</div><div class="rmo">'+fmt(r.v/12)+'€/mês</div></div><div class="rsw">'+sv+lk+'</div></div>';
   }).join('');
