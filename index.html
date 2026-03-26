@@ -315,11 +315,19 @@ async function go(){
     clearInterval(iv);
     if(!resp.ok) throw new Error('Erro ao obter tarifários (HTTP '+resp.status+').');
     const data_=await resp.json();
-    if(!data_||!data_.Resultados||!data_.Resultados.length) throw new Error('Não foi possível obter tarifários. Tente novamente.');
-    RES=data_.Resultados.map(r=>({
-      n:r.Oferta[0].Comercializador,ta:r.Oferta[0].Nome,v:r.PrecoTotal,
-      i:r.Oferta[0].IndexacaoSpot==='S',u:r.Oferta[0].Url||r.Oferta[0].UrlComercializador||''
-    })).sort((a,b)=>a.v-b.v);
+    const _res = data_?.Resultados || data_?.resultados || data_?.ofertas || []; if(!_res.length) throw new Error('Não foi possível obter tarifários. Tente novamente.'); data_.Resultados = _res;
+    // Suporte para novo formato ERSE (connectors/simular_eletricidade)
+    const resultados = data_.Resultados || data_.resultados || data_.ofertas || [];
+    RES=resultados.map(r=>{
+      const oferta = r.Oferta?.[0] || r.oferta?.[0] || r;
+      return {
+        n: oferta.Comercializador || oferta.comercializador || oferta.nome_comercializador || r.Comercializador || '',
+        ta: oferta.Nome || oferta.nome || oferta.descricao || '',
+        v: r.PrecoTotal || r.precoTotal || r.preco_total || oferta.PrecoTotal || 0,
+        i: (oferta.IndexacaoSpot || oferta.indexacaoSpot || '') === 'S',
+        u: oferta.Url || oferta.url || oferta.UrlComercializador || oferta.urlComercializador || ''
+      };
+    }).filter(r => r.n && r.v > 0).sort((a,b)=>a.v-b.v);
     render();
   }catch(e){clearInterval(iv);document.getElementById('em').textContent=e.message||'Erro desconhecido.';show('ve');ss(1);}
 }
