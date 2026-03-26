@@ -165,6 +165,9 @@
             <option>LOGICA Energy</option>
           </select>
         </div>
+        <div class="field"><label for="eurAtual">Valor fatura anual actual (€)</label>
+          <input type="number" id="eurAtual" placeholder="ex: 600" min="0" max="10000" step="0.01" autocomplete="off">
+        </div>
       </div>
       <div class="nf"><strong>Consumo anual:</strong> se a sua fatura mostra consumo mensal (ex: 356 kWh/mês), multiplique por 12 (= 4.272 kWh/ano).</div>
 
@@ -253,7 +256,7 @@ function hf(f){
         :{type:'image',source:{type:'base64',media_type:mime,data:b64}};
       const data=await callClaude([{role:'user',content:[
         fileBlock,
-        {type:'text',text:'Fatura de eletricidade portuguesa. Extrai os seguintes dados e responde APENAS em JSON:\n\nREGRA PARA O CONSUMO ANUAL (campo kwh):\n1. Se a fatura tiver histórico de consumo dos últimos 12 meses (gráfico ou tabela com valores mensais), calcula a MÉDIA dos 12 meses e multiplica por 12 para obter o consumo anual real.\n2. Se NÃO houver histórico de 12 meses, usa o consumo do mês desta fatura multiplicado por 12.\nEsta regra é CRÍTICA — nunca uses apenas o mês da fatura se existir histórico anual na fatura.\n\nResposta JSON: {"kwh":N,"pot":"X","forn":"NOME","metodo":"historico_12m"|"mes_x12"}\nonde pot é índice: 0=1.15kVA, 1=2.3kVA, 2=3.45kVA, 3=4.6kVA, 4=5.75kVA, 5=6.9kVA, 6=10.35kVA, 7=13.8kVA'}
+        {type:'text',text:'Fatura de eletricidade portuguesa. Extrai os seguintes dados e responde APENAS em JSON:\n\nREGRA PARA O CONSUMO ANUAL (campo kwh):\n1. Se a fatura tiver histórico de consumo dos últimos 12 meses (gráfico ou tabela com valores mensais), calcula a MÉDIA dos 12 meses e multiplica por 12 para obter o consumo anual real.\n2. Se NÃO houver histórico de 12 meses, usa o consumo do mês desta fatura multiplicado por 12.\nEsta regra é CRÍTICA — nunca uses apenas o mês da fatura se existir histórico anual na fatura.\n\nREGRA PARA O VALOR ANUAL (campo eur):\n- Se a fatura mostrar o total a pagar deste período, multiplica pelo número de meses necessários para obter o valor anual.\n- Se a fatura for mensal, multiplica o total por 12.\n- Se não conseguires calcular, usa null.\n\nResposta JSON: {"kwh":N,"pot":"X","forn":"NOME","metodo":"historico_12m"|"mes_x12","eur":N|null}\nonde pot é índice: 0=1.15kVA, 1=2.3kVA, 2=3.45kVA, 3=4.6kVA, 4=5.75kVA, 5=6.9kVA, 6=10.35kVA, 7=13.8kVA'}
       ]}]);
       const raw = data?.content?.[0]?.text || '';
       const jsonMatch = raw.match(/\{[\s\S]*\}/);
@@ -262,6 +265,7 @@ function hf(f){
       if(result.kwh) document.getElementById('kwh').value=result.kwh;
       if(result.pot!==undefined) document.getElementById('pot').value=String(result.pot);
       if(result.forn) document.getElementById('forn').value=result.forn;
+      if(result.eur) document.getElementById('eurAtual').value=result.eur;
       document.getElementById('ull').innerHTML='<strong>Dados extraídos</strong> — confirme e ajuste se necessário';
       const metodo=result.metodo==='historico_12m'?'historico_12m':'mes_x12';
       window._metodoConsumo=metodo;
@@ -286,7 +290,8 @@ async function go(){
   if(!kwh||kwh<100){const e=document.getElementById('kwh');e.classList.add('err');e.focus();setTimeout(()=>e.classList.remove('err'),1500);err=true;}
   if(pot===''){const e=document.getElementById('pot');e.classList.add('err');if(!err)e.focus();setTimeout(()=>e.classList.remove('err'),1500);err=true;}
   if(err)return;
-  ST={kwh,pot,cy,fn,metodo:window._metodoConsumo||'mes_x12'};FLT='all';
+  const eurAtual=parseFloat(document.getElementById('eurAtual').value)||null;
+  ST={kwh,pot,cy,fn,metodo:window._metodoConsumo||'mes_x12',eur:eurAtual};FLT='all';
   show('vl');ss(2);
   const msgs=[
     ['A comparar tarifários em tempo real...','Aguarde um momento'],
@@ -344,16 +349,23 @@ function render(){
   document.getElementById('rtt').textContent=RES.length+' tarifários para o seu perfil';
   document.getElementById('rmm').innerHTML='<span class="tag">⚡ '+kwh.toLocaleString('pt-PT')+' kWh/ano</span><span class="tag">'+PL[pot]+'</span><span class="tag">'+(cy==='1'?'Simples':'Bi-horário')+'</span>'+(fn?'<span class="tag gold">Actual: '+fn+'</span>':'');
   const best=RES[0];
-  const metodoLabel=ST.metodo==='historico_12m'?'média dos últimos 12 meses':'mês da fatura × 12';
+  const metodoLabel=ST.metodo==='historico_12m'?'média 12 meses':'mês × 12';
+  const eurRef=ST.eur||null;
   const sb=document.getElementById('sb');
-  sb.className='sum na';
-  sb.innerHTML='<div><div class="sl">Consumo real utilizado</div><div class="sv" style="font-size:22px">'+ST.kwh.toLocaleString('pt-PT')+' kWh/ano</div><div class="ss">'+metodoLabel+'</div></div><div><div class="sl">Melhor oferta disponível</div><div class="sv g">'+fmt(best.v)+'€/ano</div><div class="ss">'+fmt(best.v/12)+'€/mês · '+best.n+'</div></div>';
+  if(eurRef){
+    const poupanca=Math.round(eurRef-best.v);
+    sb.className='sum';
+    sb.innerHTML='<div><div class="sl">Fatura actual estimada</div><div class="sv r">'+fmt(eurRef)+'€/ano</div><div class="ss">'+fmt(eurRef/12)+'€/mês · '+ST.fn+' · '+metodoLabel+'</div></div><div class="sa"><svg width="32" height="14" viewBox="0 0 32 14" fill="none"><path d="M0 7h28M22 1l7 6-7 6" stroke="rgba(250,248,244,.25)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div><div class="sl">Melhor oferta disponível</div><div class="sv g">'+fmt(best.v)+'€/ano</div><div class="ss">'+fmt(best.v/12)+'€/mês · '+best.n+'</div><span class="sk '+(poupanca>0?'p':poupanca<0?'n':'s')+'">'+(poupanca>0?'Poupa '+poupanca+'€/ano':poupanca<0?'Mais caro '+Math.abs(poupanca)+'€/ano':'Igual ao actual')+'</span></div>';
+  }else{
+    sb.className='sum na';
+    sb.innerHTML='<div><div class="sl">Consumo ('+metodoLabel+')</div><div class="sv" style="font-size:22px">'+ST.kwh.toLocaleString('pt-PT')+' kWh/ano</div><div class="ss">Introduza o valor anual actual (€) para ver poupança</div></div><div><div class="sl">Melhor oferta disponível</div><div class="sv g">'+fmt(best.v)+'€/ano</div><div class="ss">'+fmt(best.v/12)+'€/mês · '+best.n+'</div></div>';
+  }
   document.getElementById('fba').textContent='Todos ('+RES.length+')';
   rl();
 }
 
 function rl(){
-  const{fn}=ST;
+  const{fn}=ST;const eurRef=ST.eur||null;
   let lst=RES;
   if(FLT==='fix')lst=lst.filter(r=>!r.i);
   if(FLT==='idx')lst=lst.filter(r=>r.i);
@@ -361,7 +373,8 @@ function rl(){
     const iB=i===0&&FLT==='all',iC=r.n===fn;
     const bd=(iB?'<span class="b bst">★ Mais barato</span>':'')+(iC?'<span class="b bc">Contrato actual</span>':'')+
       '<span class="b '+(r.i?'bi':'bf')+'">'+(r.i?'IDX':'FIX')+'</span>';
-    const sv=iC&&!iB?'<span class="rs s">Pode renegociar</span>':'';
+    const diff=eurRef?Math.round(eurRef-r.v):null;
+    const sv=diff!==null?'<span class="rs '+(diff>0?'p':diff<0?'n':'s')+'">'+(diff>0?'Poupa '+diff+'€/ano':diff<0?'Mais caro '+Math.abs(diff)+'€/ano':'Igual ao actual')+'</span>':'';
     const lk=r.u?'<a class="rl-a" href="'+r.u+'" target="_blank" rel="noopener">Ver oferta ↗</a>':'';
     return '<div class="rc '+(iB?'w':'')+' '+(iC&&!iB?'cur':'')+' "><div><div class="br">'+bd+'</div><div class="rn">'+r.n+'</div><div class="rta">'+r.ta+'</div></div><div><div class="rp '+(iC&&!iB?'st':'')+' ">'+fmt(r.v)+'€</div><div class="rmo">'+fmt(r.v/12)+'€/mês</div></div><div class="rsw">'+sv+lk+'</div></div>';
   }).join('');
