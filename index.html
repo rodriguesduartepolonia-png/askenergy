@@ -275,7 +275,7 @@ function downloadCSV(){
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function callClaude(messages){
-  const body={model:'claude-sonnet-4-20250514',max_tokens:8000,messages};
+  const body={model:'claude-sonnet-4-6',max_tokens:8000,messages};
   const PROXY='https://quiet-resonance-88e5.rodrigues-duartepolonia.workers.dev/extract';
   const r=await fetch(PROXY,{
     method:'POST',
