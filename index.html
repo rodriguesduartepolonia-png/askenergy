@@ -56,6 +56,10 @@
     .btn-p:hover{background:#a82d21}
     .btn-g{background:transparent;border:1.5px solid var(--paper3);border-radius:8px;padding:0 1.25rem;height:40px;font-family:var(--sans);font-size:13px;font-weight:500;color:var(--ink2);cursor:pointer;transition:background .15s;margin-top:1.25rem}
     .btn-g:hover{background:var(--paper2)}
+    /* ── Download button ── */
+    .btn-dl{display:none;align-items:center;gap:7px;background:var(--green-bg);border:1.5px solid var(--green);border-radius:8px;padding:0 1.25rem;height:40px;font-family:var(--sans);font-size:13px;font-weight:600;color:var(--green);cursor:pointer;transition:background .15s;margin-top:1.25rem}
+    .btn-dl:hover{background:#d4eddc}
+    .btn-dl.vis{display:flex}
     .loading{text-align:center;padding:3rem 1.5rem}
     .sw{display:flex;justify-content:center;margin-bottom:1.25rem}
     .spinner{width:28px;height:28px;border:2.5px solid var(--paper3);border-top-color:var(--red);border-radius:50%;animation:spin .65s linear infinite}
@@ -102,6 +106,7 @@
     .hidden{display:none!important}
     .fn{font-size:11.5px;color:var(--ink3);margin-top:1.5rem;padding:1rem 1.25rem;background:var(--paper2);border-radius:var(--r);border-left:3px solid var(--paper3);line-height:1.7}
     .fn strong{color:var(--ink2)}
+    .btns-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
     @media(max-width:580px){.sum,.sum.na{grid-template-columns:1fr}.sa{display:none}.rc{grid-template-columns:1fr;gap:8px}.rp,.rmo{text-align:left}.rsw{align-items:flex-start}}
   </style>
 </head>
@@ -203,10 +208,16 @@
     <div class="rl" id="rl"></div>
     <div class="fn">
       <strong>Dados:</strong> Preços em tempo real, mercado liberalizado português.<br>
-      Valores incluem IVA e todos os encargos. <strong>IDX</strong> = indexada ao mercado OMIE (variável). <strong>FIX</strong> = fixa.<br>
+      Valores incluem IVA e todos os encargos. <strong>IDX</strong> = indexada ao mercado OMIE (variável). <strong>FIX</strong> = fixa.<br>
       A mudança de fornecedor não interrompe o fornecimento.
     </div>
-    <button class="btn-g" onclick="rst()">← Nova consulta</button>
+    <div class="btns-row">
+      <button class="btn-g" onclick="rst()">← Nova consulta</button>
+      <button class="btn-dl" id="btnDl" onclick="downloadCSV()">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Download resultados (CSV)
+      </button>
+    </div>
   </div>
 </div>
 
@@ -217,7 +228,51 @@ function fmt(n){return n.toLocaleString('pt-PT',{minimumFractionDigits:2,maximum
 function show(id){['vf','vl','ve','vr'].forEach(v=>document.getElementById(v).classList.toggle('hidden',v!==id));}
 function ss(n){for(let i=1;i<=3;i++){const e=document.getElementById('st'+i);e.className='step'+(i<n?' done':i===n?' on':'');}}
 
+// ── Download CSV ─────────────────────────────────────────────────────────────
+function downloadCSV(){
+  if(!RES.length) return;
+  const ts = new Date().toISOString();
+  const datePt = new Date().toLocaleDateString('pt-PT');
+  const metodoLabel = ST.metodo==='historico_12m' ? 'Média 12 meses' : 'Mês × 12';
+  const eurRef = ST.eur || null;
 
+  const rows = [];
+  // Cabeçalho informativo
+  rows.push('# AskEnergy — Resultados da Simulação');
+  rows.push('# Data: ' + datePt);
+  rows.push('# Consumo anual (kWh): ' + ST.kwh);
+  rows.push('# Método de cálculo: ' + metodoLabel);
+  rows.push('# Potência: ' + (PL[ST.pot] || ST.pot));
+  rows.push('# Ciclo: ' + (ST.cy === '1' ? 'Simples' : 'Bi-horário'));
+  rows.push('# Fornecedor atual: ' + (ST.fn || 'Não indicado'));
+  rows.push('# Fatura atual estimada (€/ano): ' + (eurRef ? eurRef.toFixed(2) : 'Não indicado'));
+  rows.push('#');
+  // Cabeçalho da tabela
+  rows.push('Rank;Comercializadora;Nome da Oferta;Tipo;EUR_ano;EUR_mes;Poupanca_EUR_ano;Poupanca_pct');
+
+  RES.forEach((r, i) => {
+    const tipo = r.i ? 'IDX' : 'FIX';
+    const eurAno = r.v.toFixed(2);
+    const eurMes = (r.v / 12).toFixed(2);
+    const poupanca = eurRef ? (eurRef - r.v).toFixed(2) : '';
+    const poupancaPct = eurRef && eurRef > 0 ? ((eurRef - r.v) / eurRef * 100).toFixed(1) + '%' : '';
+    const nome = (r.n || '').replace(/;/g, ',');
+    const oferta = (r.ta || '').replace(/;/g, ',');
+    rows.push([i + 1, nome, oferta, tipo, eurAno, eurMes, poupanca, poupancaPct].join(';'));
+  });
+
+  const conteudo = '\uFEFF' + rows.join('\r\n'); // BOM para Excel abrir com acentos correctos
+  const blob = new Blob([conteudo], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'askenergy-' + ts.slice(0,10) + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 async function callClaude(messages){
   const body={model:'claude-sonnet-4-20250514',max_tokens:8000,messages};
@@ -292,6 +347,8 @@ async function go(){
   if(err)return;
   const eurAtual=parseFloat(document.getElementById('eurAtual').value)||null;
   ST={kwh,pot,cy,fn,metodo:window._metodoConsumo||'mes_x12',eur:eurAtual};FLT='all';
+  // Esconder botão download de consultas anteriores
+  document.getElementById('btnDl').classList.remove('vis');
   show('vl');ss(2);
   const msgs=[
     ['A comparar tarifários em tempo real...','Aguarde um momento'],
@@ -314,7 +371,6 @@ async function go(){
       electFaturaCheias:'',electFaturaVazio:'',electFaturaFixo:''
     }).toString();
 
-    // Chamada directa ao proxy Cloudflare — sem CORS, sem Claude API
     const PROXY='https://quiet-resonance-88e5.rodrigues-duartepolonia.workers.dev';
     const resp=await fetch(PROXY,{
       method:'POST',
@@ -324,8 +380,9 @@ async function go(){
     clearInterval(iv);
     if(!resp.ok) throw new Error('Erro ao obter tarifários (HTTP '+resp.status+').');
     const data_=await resp.json();
-    const _res = data_?.Resultados || data_?.resultados || data_?.ofertas || []; if(!_res.length) throw new Error('Não foi possível obter tarifários. Tente novamente.'); data_.Resultados = _res;
-    // Suporte para novo formato ERSE (connectors/simular_eletricidade)
+    const _res = data_?.Resultados || data_?.resultados || data_?.ofertas || [];
+    if(!_res.length) throw new Error('Não foi possível obter tarifários. Tente novamente.');
+    data_.Resultados = _res;
     const resultados = data_.Resultados || data_.resultados || data_.ofertas || [];
     RES=resultados.map(r=>{
       const oferta = r.Oferta?.[0] || r.oferta?.[0] || r;
@@ -343,6 +400,8 @@ async function go(){
 
 function render(){
   show('vr');ss(3);
+  // Mostrar botão download
+  document.getElementById('btnDl').classList.add('vis');
   const{kwh,pot,cy,fn}=ST;
   const hoje=new Date().toLocaleDateString('pt-PT',{day:'numeric',month:'long',year:'numeric'});
   document.getElementById('rd').textContent=hoje;
@@ -383,6 +442,7 @@ function rl(){
 function filt(t,btn){FLT=t;document.querySelectorAll('.fb').forEach(b=>b.classList.remove('on'));btn.classList.add('on');rl();}
 function rst(){
   show('vf');ss(1);ST={};RES=[];FLT='all';
+  document.getElementById('btnDl').classList.remove('vis');
   document.getElementById('kwh').value='';document.getElementById('pot').value='';
   const dz=document.getElementById('dz');dz.classList.remove('over','ok');
   document.getElementById('ull').innerHTML='<strong>Clique para carregar</strong> ou arraste o PDF aqui';
